@@ -1,0 +1,38 @@
+---
+title: "sem"
+author: "wyy"
+date: "2024-04-12"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lr_sws7_au_to_25_cluster.csv")
+
+
+
+model <- '
+    level: 1
+        value ~ sw_value + density + log_Koil_air + sp_weight + sp_troph + po_xlogp +  organ_muscle + melting_point
+        sw_value ~ po_m_w + log_Koa_wet + solubility 
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ TOTALS_CO2_E * GDP + port_distance + SF6 + HCFC + mine_distance + tcsw + estuary_distance + global_salinity
+        tcsw ~ ctp + str + ssr + i10fg + v10 + u10 + ref_ice
+
+        
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+
+
+summary(fit, fit.measures=TRUE)
+
+
+```
+
