@@ -1,0 +1,246 @@
+---
+title: "sem"
+author: "wyy"
+date: "2024-04-12"
+output: html_document
+---
+
+
+### raw
+不太对，虽然使用变量需要是两个vif的并集构成，但是在SEM指定影响时，应该还是由它们内部的组成去构成路径，而不是像下面这样混在一起。
+从初步的结果来看，不需要进行EFA去寻找潜在结构，直接数据就可以了，优化一下，结果是没有问题的。
+然后就到下一个问题了，sw在shap的RF结果非常差，MLR的R2都有0.24，RF的R2都呈负值了，但是从SEM的结果来看，sw是需要的，在RF结果很差的情况下，有两个方向去解决这个问题：
+1. 使用lr_sw的数据从头开始，到shap，看看sw的重要性，如果能够证明sw不重要，那就没有问题了，但是如果重要还是要进入第二个方向
+2. 使用sw数据，进入到part3-forecast，看看R2。
+如果sw重要且R2低，那就没救了。
+
+
+```{r setup, include=FALSE}
+# 20240826-2
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lr_sws7_au_to_25_cluster.csv")
+
+
+# df_data$GDP_sq <- df_data$GDP^2
+# df_data$melting_point_sq <- df_data$melting_point^2
+# df_data$log_Koa_wet_sq <- df_data$log_Koa_wet^2
+
+
+model <- '
+    level: 1
+        value ~ sw_value + density + log_Koil_air + sp_weight + sp_troph + po_xlogp +  organ_muscle + melting_point
+        sw_value ~ po_m_w + log_Koa_wet + solubility 
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ TOTALS_CO2_E * GDP + port_distance + SF6 + HCFC + mine_distance + tcsw + estuary_distance + global_salinity
+        tcsw ~ ctp + str + ssr + i10fg + v10 + u10 + ref_ice
+
+        
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+# fit <- sem(model, data = df_data,cluster = "cluster")
+# fit <- sem(model, data = df_data,cluster = "cluster",estimator = "DWLS")
+
+summary(fit, fit.measures=TRUE)
+
+# write.csv(summary(fit, fit.measures=TRUE)$std, "E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\sem\\sem_results_R_0826.csv")
+
+
+
+
+```
+
+```{r setup, include=FALSE}
+# 2025-01
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lr_sws7_au_to_25_cluster.csv")
+
+
+# df_data$GDP_sq <- df_data$GDP^2
+# df_data$melting_point_sq <- df_data$melting_point^2
+# df_data$log_Koa_wet_sq <- df_data$log_Koa_wet^2
+
+
+model <- '
+    level: 1
+        value ~ sw_value + melting_point + density + log_Koil_air + sp_troph + log_Kaw + habitat + sp_weight + organ_whole + solubility
+        sw_value ~ solubility + po_m_w + log_Koa_wet + density
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ TOTALS_CO2_E + wrap_consumption + TNR_Ship_CO2_E + global_salinity + estuary_distance + tcsw + SF6 + HCFC + mine_distance
+        TNR_Ship_CO2_E ~ nships_smoothed + port_distance
+        tcsw ~ sshf + str + sp + cfc + ctt + ctp + ref_ice
+        
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+# fit <- sem(model, data = df_data,cluster = "cluster")
+# fit <- sem(model, data = df_data,cluster = "cluster",estimator = "DWLS")
+
+summary(fit, fit.measures=TRUE)
+
+write.csv(summary(fit, fit.measures=TRUE)$std, "E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\sem\\sem_results_R_0826.csv")
+
+
+
+
+```
+
+```{r setup, include=FALSE}
+# 20240815
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lr_sws7_au_to_25_cluster.csv")
+
+
+# df_data$GDP_sq <- df_data$GDP^2
+# df_data$melting_point_sq <- df_data$melting_point^2
+# df_data$log_Koa_wet_sq <- df_data$log_Koa_wet^2
+
+
+model <- '
+    level: 1
+        value ~ sw_value + po_xlogp + density + log_Koil_air + sp_troph  + sp_weight
+        sw_value ~ po_m_w + melting_point
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ TOTALS_CO2_E + global_salinity  + SF6 +  HCFC + mine_distance + port_distance + tcsw
+
+        tcsw ~sshf + ref_ice + ctp + skt
+        
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+# fit <- sem(model, data = df_data,cluster = "cluster")
+# fit <- sem(model, data = df_data,cluster = "cluster",estimator = "DWLS")
+
+summary(fit, fit.measures=TRUE)
+#fit_summary <- summary(fit, fit.measures=TRUE)
+
+#summary_df <- tidy(fit_summary)
+#write.csv(summary_df, "E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part2_sem\\sem_summary_results.csv", row.names = FALSE)
+
+
+
+```
+
+```{r setup, include=FALSE}
+
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lrsw_s5_fish_au_to_25_cluster.csv")
+
+
+df_data$mine_distance_sq <- df_data$mine_distance^2
+df_data$global_salinity_sq <- df_data$global_salinity^2
+
+
+
+model <- '
+    level: 1
+        value ~ sw_value + po_chain + log_Koil_air + organ_muscle + sp_troph + organ_liver + sp_length + sp_weight + organ_whole + solubility
+        sw_value ~ log_Koc * solubility + log_Koa_wet + log_Kaw + melting_point 
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ global_salinity_sq * estuary_distance + wrap_consumption + tcrw + sro + port_distance + mine_distance_sq + SWD_INC_CO2_E + SF6 + licd
+        SWD_INC_CO2_E ~ population
+        SF6 ~ fluorite_consumption + population
+        tcrw ~ sshf + str + sp + cfc + ctt + v10 + u10 + u100 + v100 + ref_liq
+        
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+# fit <- sem(model, data = df_data,cluster = "cluster")
+# fit <- sem(model, data = df_data,cluster = "cluster",estimator = "DWLS")
+
+summary(fit, fit.measures=TRUE)
+#fit_summary <- summary(fit, fit.measures=TRUE)
+
+#summary_df <- tidy(fit_summary)
+#write.csv(summary_df, "E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part2_sem\\sem_summary_results.csv", row.names = FALSE)
+
+
+
+```
+
+
+### new
+```{r setup, include=FALSE}
+
+library(lavaan)
+
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lrsw_s5_fish_au_to_25_cluster.csv")
+
+
+model <- '
+    level: 1
+        value ~ sw_value + po_chain + po_carbon + log_Koil_air + density + organ_muscle + organ_liver + sp_troph
+        sw_value ~ log_Koc + solubility + log_Koa_dry
+        
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ wrap_consumption + sro + HFC + HCFC + estuary_distance + tcrw + licd + population + ssro
+        tcrw ~ ssr + sshf + sp + str + cfc + ctt + u100 + v100 + u10 + v10 + ref_liq
+        sro ~ z + tcrw
+
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+# fit <- sem(model, data = df_data,cluster = "cluster")
+# fit <- sem(model, data = df_data,cluster = "cluster",estimator = "DWLS")
+
+summary(fit, fit.measures=TRUE)
+
+# write.csv(summary(fit, fit.measures=TRUE)$std, "E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\sem\\sem_results_R.csv")
+
+
+```
+
+
+### 分段
+
+```{r setup, include=FALSE}
+
+library(lavaan)
+
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\semdata\\sem_lrsw_s5_fish_au_to_25_cluster_iw.csv")
+
+model <- '
+    level: 1
+        value ~ sw_value + po_chain + po_carbon + log_Koil_air + density + organ_muscle + organ_liver + sp_troph
+        sw_value ~ log_Koc + solubility + log_Koa_dry
+        
+
+    level: 2
+        value ~ sw_value
+        sw_value ~ wrap_consumption + sro
+        wrap_consumption ~ population
+        tp ~ sshf + sp + str + cfc + ctt + u100 + v100 + u10 + v10
+        sro ~ tp
+
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+# fit <- sem(model, data = df_data,cluster = "cluster")
+# fit <- sem(model, data = df_data,cluster = "cluster",estimator = "DWLS")
+
+summary(fit, fit.measures=TRUE)
+
+# write.csv(summary(fit, fit.measures=TRUE)$std, "E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\sem\\sem_results_R.csv")
+
+
+```
