@@ -1,0 +1,259 @@
+---
+title: "fish_base"
+author: "wyy"
+date: "2025-11-25"
+output: csv
+---
+
+# mlr
+
+## water
+
+```{r pressure, echo=FALSE}
+library(packfor)
+library(vegan)
+# lr_sw_match_geo_auto_minmax
+# lr_sw_line_zscore.csv
+data <- read.csv("E:/wyy/code_project/running_outcome/final_data/SPDB/part0_treat/match/lr_sw_linear_z.csv")
+data <- data[, !(colnames(data) %in% c("lon_grid", "lat_grid", "posname", "value"))]
+
+meta_data <- read.csv("C:/Users/dell/OneDrive/file/meta_data.csv")
+
+colnames(meta_data)
+
+selected_vars <- meta_data$var_name[meta_data$var_select_w == 1]
+selected_vars <- setdiff(selected_vars, "sw_value")
+print(colnames(data))
+print(selected_vars)
+Y <- data['sw_value']  
+X <- data[, colnames(data) %in% selected_vars]
+
+
+result <- forward.sel(Y, X,R2more = 0.001, alpha = 0.05, Xscale=FALSE, Yscale= FALSE)
+
+print(result)
+
+# 保留到小数点后4位
+result_rounded <- as.data.frame(lapply(result, function(x) {
+  if (is.numeric(x)) {
+    round(x, 4)
+  } else {
+    x
+  }
+}))
+
+file_path <- "E:/wyy/code_project/running_outcome/final_data/SPDB/part2_analysis/preanalysis/mlr_sw.csv"
+write.csv(result_rounded, file = file_path, row.names = FALSE)
+
+
+```
+
+
+
+
+## bio
+
+```{r pressure, echo=FALSE}
+
+library(packfor)
+library(vegan)
+
+
+data <- read.csv("E:/wyy/code_project/running_outcome/final_data/SPDB/part0_treat/match/lr_sw_linear_z.csv")
+data <- data[, !(colnames(data) %in% c("lon_grid", "lat_grid", "posname"))]
+
+meta_data <- read.csv("C:/Users/dell/OneDrive/file/meta_data.csv")
+selected_vars <- meta_data$var_name[meta_data$var_select_bio == 1]
+selected_vars <- setdiff(selected_vars, "value")
+print(selected_vars)
+
+
+Y <- data['value']  
+X <- data[, colnames(data) %in% selected_vars]
+result <- forward.sel(Y, X,R2more = 0.001, alpha = 0.05, Xscale=FALSE, Yscale= FALSE)
+
+print(result)
+
+result_rounded <- as.data.frame(lapply(result, function(x) {
+  if (is.numeric(x)) {
+    round(x, 4)
+  } else {
+    x
+  }
+}))
+
+file_path <- "E:/wyy/code_project/running_outcome/final_data/SPDB/part2_analysis/preanalysis/mlr_lr_sw.csv"
+write.csv(result_rounded, file = file_path, row.names = FALSE)
+
+```
+
+
+# vpm
+
+## water
+```{r pressure, echo=FALSE}
+
+df_raw <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\match\\lr_sw_linear_z.csv")
+
+meta_data <- read.csv("C:\\Users\\dell\\OneDrive\\file\\meta_data.csv")
+
+vif_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part2_analysis\\preanalysis\\sw_vif_sfs.csv")
+
+list_select <- vif_data$variables
+list_select <- c(list_select, 'sw_value')
+
+df_data <- df_raw[, list_select]
+
+library(vegan)
+
+list_1 <- meta_data$var_name[meta_data$var_type3 == 0]
+list_2 <- meta_data$var_name[meta_data$var_type3 == 1]
+list_3 <- meta_data$var_name[meta_data$var_type3 == 2]
+
+
+list_col <- colnames(df_data)
+
+
+X1_cols <- intersect(list_col, list_1)
+X1_cols <- X1_cols[X1_cols != "sw_value"] 
+X2_cols <- intersect(list_col, list_2)
+X3_cols <- intersect(list_col, list_3)
+
+
+X1 <- as.data.frame(df_data[, X1_cols])
+X2 <- as.data.frame(df_data[, X2_cols])
+X3 <- as.data.frame(df_data[, X3_cols])
+
+
+
+model <- varpart(df_data$sw_value, X1, X2, X3)
+
+summary(model)
+
+
+path_str <- file.path("E:", "wyy", "code_project", "running_outcome", "final_data", "SPDB", "part2_analysis", "fig")
+
+library(ggplot2)
+svg(file.path(path_str, "fig3_sw_vpm0201.svg") , width = 9, height = 6, )
+plot(model, Xnames = c("HUM", "ENV", "PFAS"), cutoff = 0.01, cex = 1.5, bg = c("#555c6c", "#4f9c8b", "#d77563"),lwd=3, id.size=1.5, alpha=120)
+
+dev.off()
+
+
+
+
+```
+
+
+
+## bio
+```{r pressure, echo=FALSE}
+
+df_raw <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\match\\lr_sw_linear_z.csv")
+meta_data <- read.csv("C:\\Users\\dell\\OneDrive\\file\\meta_data.csv")
+
+vif_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part2_analysis\\preanalysis\\lr_sw_vif_sfs.csv")
+
+list_select <- vif_data$variables
+list_select <- c(list_select, 'value')
+
+df_data <- df_raw[, list_select]
+
+library(vegan)
+
+list_1 <- meta_data$var_name[meta_data$var_type3 == 0]
+list_2 <- meta_data$var_name[meta_data$var_type3 == 1]
+list_3 <- meta_data$var_name[meta_data$var_type3 == 2]
+list_4 <- meta_data$var_name[meta_data$var_type3 == 3]
+
+list_col <- colnames(df_data)
+
+X1_cols <- intersect(list_col, list_1)
+X1_cols <- X1_cols[X1_cols != "value"] 
+X2_cols <- intersect(list_col, list_2)
+X3_cols <- intersect(list_col, list_3)
+X4_cols <- intersect(list_col, list_4)
+
+
+X1 <- as.data.frame(df_data[, X1_cols])
+X2 <- as.data.frame(df_data[, X2_cols])
+X3 <- as.data.frame(df_data[, X3_cols])
+X4 <- as.data.frame(df_data[, X4_cols])
+
+
+model <- varpart(df_data$value, X1, X2, X3, X4)
+
+summary(model)
+
+
+
+path_str <- file.path("E:", "wyy", "code_project", "running_outcome", "final_data", "SPDB", "part2_analysis", "fig")
+
+library(ggplot2)
+svg(file.path(path_str, "fig3_lrsw_vpm0201.svg") , width = 9, height = 6, )
+plot(model, Xnames = c("HUM", "ENV", "PFAS", "BIO"), cutoff = 0.01, cex = 1.8, bg = c("#555c6c", "#4f9c8b", "#d77563", "#4d8cbf"),lwd=3, id.size=1.8, alpha=125)
+
+dev.off()
+
+
+```
+
+# sem
+
+
+## test1-10
+```{r setup, include=FALSE}
+
+
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\match\\lr_sw_linear_cluster_z.csv")
+
+model <- '
+    level: 1
+        value ~ log_D7_4 +log_pKa + po_chain + density + organ_liver +　sw_value
+        sw_value ~ log_Kaw + log_pKa + po_f_carbon + log_Koc + solubility
+    level: 2
+        value ~ sw_value 
+        sw_value ~ distance_to_sources + CLIMATE_HYDRO
+        HA =~ paper_consumption + wrap_consumption + fluorite_consumption + urban + SWD_LDF_CH4 + TOTALS_CO2
+        CLIMATE_HYDRO =~ pr + clt + mrro + ts + ps + z
+        CLIMATE_HYDRO ~ HA
+'
+
+fit <- sem(model, data = df_data,cluster = "cluster", optim.method = "em", em.iter.max=10000)
+
+summary(fit, fit.measures=TRUE)
+
+sw_value ~ mrro + potential_contamination + pr + TOTALS_CO2 + paper_consumption + WWT_CH4 + urban + GDP
+
+
+```
+
+```{r setup, include=FALSE}
+
+
+library(lavaan)
+library(broom)
+df_data <- read.csv("E:\\wyy\\code_project\\running_outcome\\final_data\\SPDB\\part0_treat\\match\\lr_sw_linear_cluster_z.csv")
+
+model <- '
+    level: 1
+        value ~ po_chain + organ_liver + sw_value + log_pKa
+        sw_value ~ log_Kaw + log_pKa + po_f_carbon + log_Koc
+    level: 2
+        value ~ sw_value 
+        sw_value ~ mrro + potential_contamination + pr + TOTALS_CO2 + fluorite_consumption + urban + prsn
+        mrro ~ pr + z + ts + prsn
+        potential_contamination ~ WWT_CH4
+'  
+
+fit <- sem(model, data = df_data,cluster = "cluster" , optim.method = "em", em.iter.max=10000)
+
+summary(fit, fit.measures=TRUE)
+
+
+
+
+```
+
